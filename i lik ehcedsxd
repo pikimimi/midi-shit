@@ -1,0 +1,385 @@
+#!/usr/bin/env python3
+from midiutil import MIDIFile
+import random
+from typing import List, Tuple, Dict, Optional
+import os
+import math
+from collections import defaultdict
+
+class HarmonicAnalysis:
+    """Handles harmonic analysis and chord relationship modeling"""
+    def __init__(self):
+        # Probability weights for chord transitions (based on analysis)
+        self.transition_weights = {
+            'I': {'IV': 0.3, 'V': 0.3, 'vi': 0.2, 'ii': 0.15, 'iii': 0.05},
+            'ii': {'V': 0.4, 'V7': 0.3, 'vi': 0.2, 'iii': 0.1},
+            'iii': {'vi': 0.4, 'ii': 0.3, 'IV': 0.3},
+            'IV': {'V': 0.3, 'ii': 0.2, 'I': 0.2, 'iii': 0.15, 'vi': 0.15},
+            'V': {'I': 0.4, 'vi': 0.3, 'iii': 0.2, 'IV': 0.1},
+            'vi': {'ii': 0.3, 'IV': 0.3, 'V': 0.2, 'I': 0.2},
+        }
+        
+        # Common city pop turnarounds
+        self.turnarounds = [
+            ['ii7', 'V7', 'IM7', 'vi7'],
+            ['iiø7', 'V7b9', 'im7', 'IVM7'],
+            ['ii7', 'bII7', 'IM7', 'IV7'],
+            ['iii7', 'bIII7', 'ii7', 'V7'],
+        ]
+        
+        # Modal interchange options
+        self.modal_interchange = {
+            'I': ['bIII', 'bVI', 'bVII'],
+            'ii': ['iiø7', 'bII7'],
+            'iii': ['bIII7'],
+            'IV': ['iv', 'IVM7'],
+            'V': ['v7', 'V7b9', 'V7#11'],
+            'vi': ['bVI', 'viø7'],
+        }
+
+class VoiceLeading:
+    """Handles voice leading rules and validation"""
+    def __init__(self):
+        self.max_leap = 7  # maximum interval leap in semitones
+        self.preferred_motion = {
+            'seventh': -1,    # sevenths resolve down
+            'third': 1,       # thirds tend to move up
+            'fifth': -2,      # fifths often move down
+        }
+        
+    def validate_progression(self, chords: List[List[int]]) -> bool:
+        for i in range(len(chords) - 1):
+            if not self._check_voice_leading(chords[i], chords[i + 1]):
+                return False
+        return True
+    
+    def _check_voice_leading(self, chord1: List[int], chord2: List[int]) -> bool:
+        # Check for parallel fifths/octaves
+        intervals1 = [n - chord1[0] for n in chord1]
+        intervals2 = [n - chord2[0] for n in chord2]
+        
+        for i1, i2 in zip(intervals1, intervals2):
+            if i1 in [7, 12] and i2 in [7, 12] and abs(i2 - i1) == abs(chord2[0] - chord1[0]):
+                return False
+                
+        # Check voice crossing
+        return all(abs(n2 - n1) <= self.max_leap for n1, n2 in zip(chord1, chord2))
+
+class CityPopChordMagic:
+    def __init__(self):
+        # Complete voicing templates
+        self.voicing_templates = {
+            'citypop1': [0, 4, 7, 11, 14],
+            'citypop2': [0, 3, 7, 10, 14],
+            'citypop3': [0, 4, 7, 11, 14, 21],
+            'citypop4': [0, 3, 7, 10, 14, 17],
+            'fusion1': [0, 4, 7, 11, 13, 21],
+            'fusion2': [0, 4, 8, 10, 14, 18]
+        }
+        
+        # Add new sophisticated voicing templates
+        self.advanced_voicings = {
+            'secondary_dominant': [0, 4, 7, 10, 14, 21],  # V7/V
+            'modal_interchange': [0, 3, 7, 10, 14, 17],   # borrowed iv
+            'chromatic_approach': [0, 4, 8, 10, 13, 19],  # altered dominant
+            'upper_structure': [0, 4, 7, 11, 14, 18, 21]  # with tensions
+        }
+        
+        self.harmonic_analysis = HarmonicAnalysis()
+        self.voice_leading = VoiceLeading()
+        self.tension_notes = [1, 6, 8, 11]
+        self.bass_notes = [-12, -24]
+        
+        self.style_variations = {
+            'early_phase': {'complexity': 0.6, 'tension': 0.4},
+            'fusion_phase': {'complexity': 0.8, 'tension': 0.7},
+            'modern_phase': {'complexity': 0.9, 'tension': 0.8}
+        }
+
+    def create_voicing(self, root: int, template: List[int], complexity: float) -> List[int]:
+        notes = [root + interval for interval in template]
+        
+        # Add tension notes based on complexity
+        if random.random() < complexity * 0.6:
+            tension = root + random.choice(self.tension_notes)
+            notes.append(tension)
+        
+        # Add bass note
+        if random.random() < 0.9:
+            bass = root + random.choice(self.bass_notes)
+            notes.append(bass)
+
+        # Spread voicing occasionally
+        if random.random() < 0.4:
+            notes = self._spread_voicing(notes)
+
+        # Ensure notes are in good range
+        notes = [n + 60 if n < 36 else n for n in notes]
+        notes = [n - 12 if n > 84 else n for n in notes]
+        
+        return sorted(notes)
+
+    def _spread_voicing(self, notes: List[int]) -> List[int]:
+        result = notes.copy()
+        for i in range(1, len(result), 2):
+            if random.random() > 0.5:
+                result[i] += 12
+        return result
+
+    def generate_progression(self, length: int = 8, style: str = 'fusion_phase') -> List[Tuple[List[int], float, float]]:
+        progression = []
+        style_params = self.style_variations[style]
+        
+        chord_degrees = self._generate_chord_sequence(length)
+        tension_arc = self._generate_tension_arc(length)
+        
+        # Allow for modulation
+        if random.random() < 0.3 and length >= 8:
+            modulation_point = random.randint(4, length - 3)
+            new_root = random.choice([5, 7, -5])
+        else:
+            modulation_point = None
+            
+        prev_root = None
+        for i, degree in enumerate(chord_degrees):
+            if i == modulation_point:
+                prev_root = (prev_root + new_root) if prev_root else 60 + new_root
+                
+            root, notes = self._realize_chord(degree, prev_root, style_params['complexity'])
+            timing_feel = self._generate_timing_feel(i, length)
+            velocity_mod = self._calculate_velocity_mod(i, length, tension_arc[i])
+            
+            progression.append((notes, timing_feel, velocity_mod))
+            prev_root = root
+            
+        return progression
+
+    def _generate_chord_sequence(self, length: int) -> List[str]:
+        sequence = []
+        current = 'I'
+        
+        if length >= 4 and random.random() < 0.4:
+            turnaround = random.choice(self.harmonic_analysis.turnarounds)
+            sequence.extend(turnaround)
+            length -= 4
+            
+        while len(sequence) < length:
+            if random.random() < 0.3:
+                options = self.harmonic_analysis.modal_interchange.get(current, [])
+                if options:
+                    current = random.choice(options)
+            else:
+                weights = self.harmonic_analysis.transition_weights[current]
+                current = random.choices(list(weights.keys()), 
+                                      weights=list(weights.values()))[0]
+            sequence.append(current)
+            
+        return sequence
+
+    def _realize_chord(self, degree: str, prev_root: Optional[int], 
+                      complexity: float) -> Tuple[int, List[int]]:
+        root_map = {'I': 60, 'ii': 62, 'iii': 64, 'IV': 65, 'V': 67, 'vi': 69}
+        root = root_map.get(degree.replace('7', '').replace('ø', ''), 60)
+        
+        if 'ø' in degree:
+            template = self.advanced_voicings['modal_interchange']
+        elif '7' in degree:
+            template = random.choice([
+                self.advanced_voicings['secondary_dominant'],
+                self.advanced_voicings['chromatic_approach']
+            ])
+        else:
+            template = random.choice(list(self.voicing_templates.values()))
+            
+        notes = self.create_voicing(root, template, complexity)
+        
+        if prev_root and not self.voice_leading.validate_progression([notes]):
+            notes = self._adjust_for_voice_leading(notes, prev_root)
+            
+        return root, notes
+
+    def _adjust_for_voice_leading(self, notes: List[int], prev_root: int) -> List[int]:
+        adjusted = notes.copy()
+        
+        for i, note in enumerate(adjusted[1:], 1):
+            if abs(note - prev_root) > self.voice_leading.max_leap:
+                if note > prev_root:
+                    adjusted[i] -= 12
+                else:
+                    adjusted[i] += 12
+                    
+        return adjusted
+
+    def _generate_timing_feel(self, pos: int, length: int) -> float:
+        base_feel = random.uniform(-0.02, 0.02)
+        
+        if pos == 0:
+            base_feel *= 0.5
+        elif pos == length - 1:
+            base_feel *= 0.7
+            
+        return base_feel
+
+    def _generate_tension_arc(self, length: int) -> List[float]:
+        tensions = []
+        golden_ratio = (1 + math.sqrt(5)) / 2
+        peak = int(length / golden_ratio)
+        
+        for i in range(length):
+            tension = 0.5
+            tension += 0.4 * (1 - abs(i - peak) / (length / 2))
+            tension += random.uniform(-0.1, 0.1)
+            tensions.append(max(0, min(1, tension)))
+        
+        return tensions
+
+    def _calculate_velocity_mod(self, pos: int, length: int, tension: float) -> float:
+        mod = 1.0
+        if pos > length * 0.8:
+            mod *= 0.95
+        mod += tension * 0.15
+        mod += random.uniform(-0.05, 0.05)
+        return max(0.8, min(1.1, mod))
+
+class MIDIGenerator:
+    """Handles enhanced MIDI file generation with multiple tracks"""
+    def __init__(self):
+        self.instruments = {
+            'chord': 4,    # Electric Piano
+            'bass': 33,    # Electric Bass
+            'pad': 90,     # Warm Pad
+            'guitar': 26,  # Clean Guitar
+        }
+        
+    def create_multi_track_midi(self, progression: List[Tuple[List[int], float, float]], 
+                              filename: str, tempo: float):
+        tracks = len(self.instruments)
+        mf = MIDIFile(tracks)
+        
+        for track, (name, program) in enumerate(self.instruments.items()):
+            mf.addTrackName(track, 0, name)
+            mf.addTempo(track, 0, int(tempo))
+            mf.addProgramChange(track, 0, 0, program)
+            
+        time = 0
+        for chord, timing_feel, velocity_mod in progression:
+            self._add_chord(mf, 0, chord, time, timing_feel, velocity_mod)
+            bass_note = min(chord) - 12
+            self._add_bass_line(mf, 1, bass_note, time, velocity_mod)
+            pad_notes = [n for n in chord if n > 60]
+            self._add_pad(mf, 2, pad_notes, time, velocity_mod)
+            self._add_guitar_comp(mf, 3, chord, time, timing_feel, velocity_mod)
+            time += 2
+            
+        with open(filename, 'wb') as outf:
+            mf.writeFile(outf)
+            
+    def _add_chord(self, mf, track, notes, time, timing_feel, velocity_mod):
+        base_velocity = int(85 * velocity_mod)
+        for note in notes:
+            velocity = base_velocity + random.randint(-5, 5)
+            mf.addNote(track, 0, note, time + timing_feel, 
+                      2 + random.uniform(-0.1, 0.1), velocity)
+                      
+    def _add_bass_line(self, mf, track, root, time, velocity_mod):
+        pattern = [0, 7, 3, -2]
+        for i, interval in enumerate(pattern):
+            note = root + interval
+            mf.addNote(track, 0, note, time + i * 0.5, 
+                      0.5, int(100 * velocity_mod))
+                      
+    def _add_pad(self, mf, track, notes, time, velocity_mod):
+        velocity = int(60 * velocity_mod)
+        for note in notes:
+            mf.addNote(track, 0, note, time, 4, velocity)
+            
+    def _add_guitar_comp(self, mf, track, chord, time, timing_feel, velocity_mod):
+        rhythm = [0, 0.5, 1, 1.5]
+        for offset in rhythm:
+            if random.random() < 0.7:
+                for note in chord[1:]:
+                    velocity = int(70 * velocity_mod) + random.randint(-10, 10)
+                    mf.addNote(track, 0, note, time + offset + timing_feel,
+                             0.5, velocity)
+
+def get_next_test_file_number() -> int:
+    i = 1
+    while os.path.exists(f"tester_midi_{i}.mid"):
+        i += 1
+    return i
+def create_midi(progression: List[Tuple[List[int], float, float]]):
+    file_number = get_next_test_file_number()
+    filename = f"tester_midi_{file_number}.mid"
+    
+    mf = MIDIFile(1)
+    track = 0
+    time = 0
+    
+    # Add track name and tempo
+    mf.addTrackName(track, time, f"Test Progression {file_number}")
+    tempo = random.uniform(85, 125)
+    mf.addTempo(track, time, int(tempo))
+    
+    # Add notes from the progression
+    for chord, timing_feel, velocity_mod in progression:
+        base_velocity = int(85 * velocity_mod)
+        for note in chord:
+            velocity = base_velocity + random.randint(-5, 5)
+            mf.addNote(track, 0, note, time + timing_feel, 
+                      2 + random.uniform(-0.1, 0.1), velocity)
+        time += 2
+    
+    with open(filename, 'wb') as outf:
+        mf.writeFile(outf)
+    
+    return filename, tempo
+
+def main():
+    print("\n🌸 City Pop Chord Progression Generator 🎹")
+    print("==========================================")
+    
+    # Create generator and progression
+    generator = CityPopChordMagic()
+    progression = generator.generate_progression(length=8)
+    
+    # Choose whether to use multi-track or single-track output
+    use_multi_track = True  # Set to False for single-track output
+    
+    if use_multi_track:
+        midi_generator = MIDIGenerator()
+        file_number = get_next_test_file_number()
+        filename = f"tester_midi_{file_number}.mid"
+        tempo = random.uniform(85, 125)
+        midi_generator.create_multi_track_midi(progression, filename, tempo)
+    else:
+        filename, tempo = create_midi(progression)
+    
+    print(f"\n✨ Created {filename}!")
+    print(f"Tempo: {tempo:.1f} BPM")
+    print("\nProgression features:")
+    print("- Rich extended harmony (maj9, min11, maj13)")
+    print("- Sophisticated voice leading")
+    print("- Deep bass movement")
+    print("- Natural tension and release")
+    print("- Authentic city pop swing feel")
+    
+    if use_multi_track:
+        print("\nTracks included:")
+        print("- Electric Piano chords")
+        print("- Electric Bass line")
+        print("- Warm Pad")
+        print("- Clean Guitar comping")
+    
+    print("\nTry it with:")
+    print("- Rhodes or CP-80 Electric Grand")
+    print("- DX7 or Juno-60 synthesizer")
+    print("- Clean electric guitar with chorus")
+    print("- Atmospheric pad sounds")
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\nGeneration cancelled by user")
+    except Exception as e:
+        print(f"\n❌ Error: {str(e)}")
