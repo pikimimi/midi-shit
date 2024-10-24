@@ -1,0 +1,110 @@
+'use client';
+import { useState } from 'react';
+import { Loader2, Github, Twitter, Instagram } from 'lucide-react';
+import { generateAndDownloadMidi } from '../lib/cityPopGenerator';
+
+export default function Home() {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    try {
+      const { url, filename } = generateAndDownloadMidi();
+      // Create and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating MIDI:', error);
+      alert('Failed to generate MIDI file');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-white">
+      <div className="w-full max-w-2xl">
+        <pre className="text-purple-400 text-center font-mono text-sm leading-[1.2]">
+{`⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣠⣤⣤⠤⠤⣶⣶⣶⡤⠤⠤⠴⢤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡴⠛⠽⢃⣩⢭⠭⠙⠒⢒⡒⢒⣲⡥⡢⣀⠀⠹⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡏⠀⠠⠊⠀⠀⢸⠁⠀⠀⠇⣀⣀⣀⣈⠉⠢⠁⠀⠻⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣞⣥⠄⠀⠾⠿⢿⣾⣤⠀⠠⣞⣩⠾⣿⠿⠵⢰⣆⣠⣒⠿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⡟⢻⠽⢲⢲⣤⠆⠀⣸⠇⠀⠀⣈⠀⠀⠈⠓⠒⠚⣋⣧⡈⢳⢸⢹⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⡮⣒⣼⣇⠀⠔⠾⣅⢀⠠⠶⠍⡿⢁⣁⣤⢶⠟⢉⣼⠟⡜⡸⣸⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡆⠀⠀⠀
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⠀⣿⢹⠓⡶⠤⢼⠯⢤⠴⠖⠛⣏⣁⣤⣾⠟⡿⠃⠀⣈⣾⣷⣶⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⡾⠴⠒⠛⠉
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⣿⣿⣿⣷⣶⣾⣶⣾⣶⣶⠾⣿⠋⠁⣸⡞⠁⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣦⣄⠀⠀⠀⠀⠀⠀⣀⣤⠴⠚⢉⣡⠼⠖⣲⠀⠀⠀
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⡄⠿⣿⣻⡹⡏⠹⡏⠉⣿⠀⣀⣸⡷⠞⡉⣄⠠⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠉⠀⢠⣞⣉⡤⣶⠋⠁⠀⠀⠀
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡿⠁⣀⠊⣉⠛⠻⠿⠿⠿⠛⢉⣉⣥⠢⢕⣮⣷⣿⣿⣿⠟⠀⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⢀⡼⠃⠀⠀⠀⠀⠀
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠗⠩⢀⡠⠤⢌⡩⠬⠍⠘⠛⡈⣉⣴⣿⢿⣿⠟⣺⣿⠏⠀⠀⠘⣿⣿⠹⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠈⠁⢀⣤⢴⡆⠀⠀
+⡁⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⠀⠤⠤⠤⣉⢢⣤⡤⠶⢞⣿⣿⣿⡿⠃⣿⢧⣤⢿⠟⠀⠀⠀⠀⠘⣿⡂⠹⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠈⠰⠋⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣀⣀⣀⠀⡇⠀⠀⠀⢸⣿⣿⣿⢱⡏⣸⣿⣿⣷⠁⠀⠀⠀⠀⠰⣎⣿⣹⢿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⠀⠀⠀⠀⠀⢹⠁⠀⠀⠀⢸⣿⣿⡏⡜⢰⣿⣿⣿⣿⡆⠀⠀⠀⠀⣰⣿⣿⣿⣧⠹⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⡴⠦⠀⠀⠀⠀⠀⠀
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠈⠹⡖⠁⠀⠀⠀⠀⢸⣿⣿⡇⣇⢸⡿⠻⣿⣿⡇⠀⠀⠀⠀⣿⣿⣿⣿⣿⠀⢻⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠶⠂⠀⠀⠀⠀⠀⠀
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⣸⠃⠀⠀⠀⠀⠀⢸⣿⣿⠇⠀⠀⢣⣠⣾⡿⠁⠀⠀⠀⠀⢏⠀⣹⣿⡿⠀⣼⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠛⠀⠀⠀⠀⠀⠀⠀
+⠁⠀⠀⠀⠀⠀⠀⠀⢀⠇⠀⠀⠀⡞⠁⠀⠀⠀⠀⠀⠀⢸⣿⣿⠀⠂⠀⠀⠈⠉⠀⠀⠀⠀⠀⠀⠈⠛⠿⠋⠁⠀⢸⣿⣿⣿⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡁⠀⠀⠀⠀⠀⠀⠀⡸⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠐⣺⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡀⠀⠀⠀⠀⠀⠀⢀⠇⠀⠀⠀⡆⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⢸⠀⠀⠂⢰⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀{`⡀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣷⣤⣀⠀⠀⡣⢀⠠⠃⠀⠀⣀⣴⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⡿⣿⣿⣿⣿⡿⣿⢟⣒⠶⡤⠴⡶⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⡧⡤⣴⢢⠤⠖⠔⠒⣿⣿⣿⢣⢒⡀⠀⠀⠀⠾⠀⠉⠁⠉⠉⠉⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠉⢳⢨⡆⡇⠀⠀⠀⠿⣿⡇⠀⢏⠥⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⣷⠈⢻⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠄⠀⠀⠀⠀⠀⠘⡄⠀⠀⠀⠀⢀⣿⠘⠇⢸⠀⠀⠀⠀⠹⡇⠀⠈⢎⣥⣀⠀⠀⡆⠀⠀⠀⠀⠀⡆⠀⠀⠘⢿⣿⣿⠏⣿⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠄⠀⠀⠀⠀⠀⠀⠈⠢⠤⢄⣠⣪⣾⠀⠀⢸⠀⠀⠄⠀⡇⠉⠀⠀⠈⢡⢊⡙⠀⡧⠤⠤⢀⡀⡼⠀⠀⠀⣐⠣⣿⢏⠀⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⢸⠀⠐⢸⠀⠀⢸⠀⡇⠀⠀⠀⠀⠈⠣⡑⢄⠸⠀⠀⠀⠠⠃⢰⡲⡞⡱⠹⠃⠈⢳⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡄⡀⠀⠀⠀⠀⠀⠀⠀⠀⢸⢀⡠⢁⡼⢢⠇⠀⠀⠈⣆⠁⠀⠀⠀⠀⠀⠀⠈⠂⢅⠧⠀⡰⠁⢀⢔⠗⠊⠀⢠⡀⠀⠀⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀`}
+        </pre>
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 
+              rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate City Pop Progression'
+            )}
+          </button>
+        </div>
+
+        {/* Social Media Links */}
+        <div className="mt-12 flex justify-center gap-6">
+          <a
+            href="https://github.com/yourusername"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <Github className="w-6 h-6" />
+          </a>
+          <a
+            href="https://twitter.com/yourusername"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <Twitter className="w-6 h-6" />
+          </a>
+          <a
+            href="https://instagram.com/yourusername"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <Instagram className="w-6 h-6" />
+          </a>
+        </div>
+      </div>
+    </main>
+  );
+}
